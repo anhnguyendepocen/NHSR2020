@@ -1,0 +1,103 @@
+---
+title: "Untitled"
+author: "Leon Eyrich Jessen"
+date: "11/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+---
+title: "Exercises"
+author: "NHS-R Conference Workshop: Artificial neural networks in R with Keras and TensorFlow"
+output: 
+   html_document:
+      toc: true
+      toc_depth: 2
+      toc_float: true
+---
+
+```{r, echo=FALSE}
+htmltools::img(src = "../Talks/img/dtu_logo_square.png", 
+               alt = "logo",
+               style = "position:absolute; top:0; right:0; padding:10px; width: 350px; height: 90px")
+```
+
+
+```{r include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+---
+
+```{r child = "01_ann_prototype.Rmd"}
+```
+
+---
+
+```{r child = "02_tensorflow_playground.Rmd"}
+```
+
+---
+
+```{r child = "03_hello_keras.Rmd"}
+```
+
+---
+
+```{r child = "04_diamonds_regression.Rmd"}
+```
+
+---
+
+```{r child = "05_deep_learning_for_cancer_immunotherapy.Rmd"}
+```
+
+---
+
+```{r child = "06_a_fictive_case_story.Rmd"}
+```
+
+---
+
+```{r child = "07_pivot.Rmd"}
+```
+
+---
+
+```{r child = "08_wrangling.Rmd"}
+```
+
+---
+
+```{r child = "09_stringr.Rmd"}
+```
+
+---
+
+```{r child = "11_ggplot.Rmd"}
+```

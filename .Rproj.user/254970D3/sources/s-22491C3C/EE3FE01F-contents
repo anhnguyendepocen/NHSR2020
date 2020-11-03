@@ -1,0 +1,55 @@
+---
+title: "Exercise Book"
+author: "NHS-R Conference Workshop: Artificial neural networks in R with Keras and TensorFlow"
+output: 
+   html_document:
+      toc: true
+      toc_depth: 2
+      toc_float: true
+---
+
+```{r, echo=FALSE}
+htmltools::img(src = "../Talks/img/dtu_logo_square.png", 
+               alt = "logo",
+               style = "position:absolute; top:0; right:0; padding:10px; width: 90px; height: 90px")
+```
+
+
+```{r include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+library("patchwork")
+set.seed(265509)
+load(file = "../data/06_case_story.rds")
+```
+
+---
+
+```{r child = "01_ann_prototype.Rmd"}
+```
+
+---
+
+```{r child = "02_tensorflow_playground.Rmd"}
+```
+
+---
+
+```{r child = "03_hello_keras.Rmd"}
+```
+
+---
+
+```{r child = "04_diamonds_regression.Rmd"}
+```
+
+---
+
+```{r child = "05_deep_learning_for_cancer_immunotherapy.Rmd"}
+```
+
+---
+
+```{r child = "06_a_fictive_case_story.Rmd"}
+```
+

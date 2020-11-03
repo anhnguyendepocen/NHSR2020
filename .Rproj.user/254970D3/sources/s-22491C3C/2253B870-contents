@@ -1,0 +1,8 @@
+.Rhistory
+.Rprofile
+.git
+*.Rmd
+.gitignore
+.Rproj.user
+.RData
+.REnv

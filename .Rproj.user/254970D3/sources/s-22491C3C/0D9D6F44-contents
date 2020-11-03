@@ -1,0 +1,360 @@
+---
+title: "Artificial Neural Networks in R with Keras and TensorFlow"
+subtitle: "The Third Annual NHS-R Conference - 2020"
+author: "Leon Eyrich Jessen"
+date: "November 5th 2020"
+output:
+  ioslides_presentation:
+    widescreen: true
+    smaller: true
+    logo: img/dtu_logo_square.png
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library("tidyverse")
+source(file = "../R/theme_dtu.R")
+```
+
+# First things first - Intro
+
+## Welcome to this workshop on ANNs in R
+
+<div style="float: left; width: 50%;">
+Assumed Workshop Prerequisites
+
+  - Comfortable using and navigating the RStudio IDE for R dev
+  - Experience with the Base and Tidyverse dialects of R
+  - This workshop is introductory, so no prior knowledge of neural networks is required
+
+General Workshop Info
+
+- Not all code details are important, so do not worry if not everything makes sense
+- All materials are and will remain open source under GPL-3.0 on [GitHub](https://github.com/leonjessen/NHSR2020), so you can revisit the entire workshop any time you would like to!
+- Per previous point, please do not record this workshop and do not take screen shots
+</div>
+
+<div style="float: right; width: 50%;">
+```{r, out.width = "400px", fig.align="center"}
+knitr::include_graphics("img/all_logos.png")
+```
+</div>
+
+
+## Workshop Attendee Profiles
+
+```{r fig.align="center"}
+# Manually entered based on mail from Anastasiia Zharinova Oct. 27th 2020 
+wap = tribble(
+  ~level, ~n,
+  "Advanced",	6,
+  "Intermediate", 33,
+  "Novice",	16,
+  "Never used R", 2
+)
+wap_mean <- round(mean(c(rep(3, wap$n[1]),
+                         rep(2, wap$n[2]),
+                         rep(1, wap$n[3]),
+                         rep(0, wap$n[4]))), 1)
+wap %>% 
+  mutate(level = factor(level,
+                        levels = c("Never used R", "Novice", 
+                                   "Intermediate", "Advanced")),
+         pct = n / sum(n)) %>% 
+  ggplot(aes(x = level, y = pct)) +
+  geom_col(fill = dtu_colours["corp_red"]) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(x = "",
+       y = "Percent of Attendees") +
+  theme_dtu()
+```
+
+If we denote the `R` experience levels `c(0, 1, 2, 3)`, then the average is `r wap_mean`
+
+## Workshop Learning Objectives
+
+<div style="float: left; width: 50%;">
+
+A participant who has met the objectives of this workshop will be able to:
+
+  - _Conceptually_ describe
+    - What an ANN is
+    - How an ANN is trained
+    - How predictions are made
+    - What ANN hyperparameters are
+
+  - Create a simple dense ANN model in R using TensorFlow via Keras
+  - Apply the created model to predict on data
+</div>
+
+<div style="float: right; width: 50%;">
+```{r, out.width = "400px", fig.align="center"}
+knitr::include_graphics("img/objectives.png")
+```
+</div>
+
+## Workshop Limitations
+
+<div style="float: left; width: 40%;">
+- The aim of this workshop is to _introduce_ you to artificial neural networks in R
+
+- The key here being _introduce_, we have limited time, so you will mainly be working with code I created
+
+- We have 4h in total, realistically we can only scratch the surface of deep learning
+
+- If you have little-to-no-experience with base R and/or Tidyverse, expect the workshop to feel overwhelming
+
+- Workshop materials will remain open, so my intention is, that you can revisit and study them further after todays workshop
+
+</div>
+
+<div style="float: right; width: 50%;">
+```{r, out.width = "400px", fig.align="center"}
+knitr::include_graphics("img/limits.png")
+```
+</div>
+
+## Your host for the day will be... Me!
+
+<div style="float: left; width: 50%;">
+- Leon Eyrich Jessen
+
+- I'm from Copenhagen, Denmark
+
+- Background in biotech engineering and a PhD in Bioinformatics
+
+- I am an Assistant Professor of Bioinformatics at Department of Health Technology, Technical University of Denmark
+
+- Head of the BioMLgroup focusing on development and application of machine learning in bioinformatics
+
+- If you are interested in bioinformatics, machine learning and data science, feel free to find me on Twitter: [`@jessenleon`](https://twitter.com/jessenleon)
+</div>
+
+<div style="float: right; width: 50%;">
+```{r, out.width = "300px", fig.align="center"}
+knitr::include_graphics("img/leon_profile_pic_w_twitter.png")
+```
+</div>
+
+# On Artificial Neural Networks (ANNs)
+
+## What are ANNs?
+
+- A mathematical framework inspired by neuron network structure of the human brain
+
+```{r, out.width = "600px", fig.align="center"}
+knitr::include_graphics("img/Blausen_0657_MultipolarNeuron.png")
+```
+<p align="center"><font size="1">_Source: [Bruce Blaus](https://commons.wikimedia.org/wiki/User:BruceBlaus) | [Multipolar Neuron](https://upload.wikimedia.org/wikipedia/commons/1/10/Blausen_0657_MultipolarNeuron.png) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)_</font></p>
+
+- In reality we do not really know how the human brain learns, we only know, that it is capable of processing "data"
+
+## "Inspired by neuron network structure"
+
+- If you google "Artificial Neural Networks", you will get something like this:
+
+```{r, out.width = "900px", fig.align="center"}
+knitr::include_graphics("img/google_anns.png")
+```
+
+- Let's demystify this...
+
+## "Inspired by neuron network structure"
+
+<div style="float: left; width: 50%;">
+```{r, out.width = "500px", fig.align="center"}
+knitr::include_graphics("img/Blausen_0657_MultipolarNeuron.png")
+```
+</div>
+
+<div style="float: right; width: 50%;">
+```{r, out.width = "500px", fig.align="center"}
+knitr::include_graphics("img/ann_01.png")
+```
+</div>
+
+- $I_i...I_n$: The input layer, $B_I$: Bias/intercept
+- $H_j...H_m$: The hidden layer, $B_H$: Bias/intercept
+- $O$: The output
+
+# Making a Prediction: The feed forward algorithm
+
+## Example: Fully Connected Neural Network
+
+- To put it simple, the input vector `I` is transformed to a prediction `O`
+
+- The input vector is simply the set of variables in your data for a single observation, e.g.
+
+```{r}
+iris %>% as_tibble %>% sample_n(10)
+```
+
+- $Species \sim f(Sepal.Length, Sepal.Width, Petal.Length, Petal.Width)$
+
+- We can visualise this like so
+
+## Example: Fully Connected Neural Network
+
+- `I` is the input vector, `H` is the hidden layer and `O` is the output
+- `B` is the bias neuron, think intercept in the familiar $y = b + a \cdot x$
+
+```{r, out.width = "500px", fig.align="center"}
+knitr::include_graphics("img/ann_01.png")
+```
+
+## Example: Fully Connected Neural Network
+
+- Flow from input layer (features) to hidden layer:
+
+    $H_{j} = I_{i} \cdot v_{i,j} + I_{i+1} \cdot v_{i+1,j} + I_{i+...} \cdot v_{i+...,j} + I_{n} \cdot v_{n,j} + B_{I} \cdot v_{n+1,j} =$
+    $\sum_{i}^{n} I_{i} \cdot v_{i,j} + B_{I} \cdot v_{n+1,j} = \sum_{i}^{n+1} I_{i} \cdot v_{i,j} = \textbf{I} \cdot \textbf{v}_j$  
+
+- Non-linear transformation of hidden layer input to hidden layer output (activation function):
+
+    $S(H_{j}) = \frac{1}{1+e^{-H_{j}}}$
+
+```{r, out.width = "600px", fig.align="center"}
+knitr::include_graphics("img/ann_02.png")
+```
+
+## Example: Fully Connected Neural Network
+
+- Flow from hidden layer to output layer:
+
+    $O = H_{j} \cdot w_{j} + H_{j+1} \cdot w_{j+1} + H_{j+...} \cdot w_{j+...} + H_{m} \cdot w_{m} + B_{H} \cdot w_{m+1} =$
+    $\sum_{j}^{m} H_{j} \cdot w_{j} + B_{H} \cdot w_{m+1} = \sum_{j}^{m+1} H_{j} \cdot w_{j} = \textbf{H} \cdot \textbf{w}$  
+    
+- Non-linear transformation of output layer input to output layer output (activation function):
+
+    $S(O) = \frac{1}{1+e^{-O}}$
+
+```{r, out.width = "600px", fig.align="center"}
+knitr::include_graphics("img/ann_03.png")
+```
+
+# Training a Network: The Back Propagation Algorithm
+
+## Example: Fully Connected Neural Network
+
+<div style="float: left; width: 50%;">
+- Activation function (non-linearity):
+  - $S(x) = \frac{1}{1+e^{-x}}$
+- Loss function (error):
+  - $E = MSE(O,T) = \frac{1}{2} \left( o - t \right)^2$
+- Optimisation using gradient descent (weight updates):
+    - $\Delta w = - \epsilon \frac{\partial E}{\partial w}$
+    - $\Delta v = - \epsilon \frac{\partial E}{\partial v}$
+    - Where $\epsilon$ = learning rate
+</div>
+
+<div style="float: right; width: 50%;">
+```{r, out.width = "500px", fig.align="center"}
+knitr::include_graphics("img/ann_04.png")
+```
+</div>
+
+# Activation Function Examples
+
+## Activation Function - Sigmoid
+
+```{r, echo=FALSE, out.width = "600px", fig.align='center'}
+tibble(x = seq(-10, 10, length.out = 100), y = 1 / (1 + exp(-x))) %>%
+  ggplot(aes(x,y)) +
+  geom_line() +
+  xlab("Input") +
+  ylab("Output = S(input)") +
+  ggtitle("Sigmoid Activation") +
+  theme_bw() +
+  theme(text = element_text(size = 20))
+```
+
+- Low input and the neuron is turned off (emits 0)
+- Medium input and the neuron emits a number inbetween 0 and 1
+- High input and the neuron is turned on (emits 1)
+
+## Activation Function - Rectified Linear Unit
+
+```{r, echo=FALSE, out.width = "600px", fig.align='center'}
+ReLU = function(x){ return( ifelse(x < 0, 0, x) ) }
+tibble(x = seq(-10, 10, length.out = 100), y = ReLU(x)) %>%
+  ggplot(aes(x,y)) +
+  geom_line() +
+  xlab("Input") +
+  ylab("Output = S(input)") +
+  ggtitle("ReLU Activation") +
+  theme_bw() +
+  theme(text = element_text(size = 20))
+```
+
+- Input less than zero and the neuron is turned off (emits 0)
+- Input larger than zero and the neuron simply propagates the signal (emits x)
+
+## Activation Function - Leaky Rectified Linear Unit
+
+```{r, echo=FALSE, out.width = "600px", fig.align='center'}
+lReLU = function(x, a = 0.05){ return( ifelse(x < 0, a * x, x) ) }
+tibble(x = seq(-10, 10, length.out = 100), y = lReLU(x)) %>%
+  ggplot(aes(x,y)) +
+  geom_line() +
+  xlab("Input") +
+  ylab("Output = S(input)") +
+  ggtitle("Leaky ReLU Activation") +
+  theme_bw() +
+  theme(text = element_text(size = 20))
+```
+
+- Input less than zero and the neuron is almost turned off (emits a small number)
+- Input larger than zero and the neuron simply propagates the signal (emits x)
+
+## Activation Function - Output neuron(s)
+
+- Choice of activation function for output neuron(s) depend on aim
+
+    - Binary Classification: Sigmoid
+    - Multiclass Classification: Softmax, softmax$(x_i) = \frac{e^{x_i}}{\sum_{i=1}^{n} e^{x_i}}$
+    - Regression: Linear
+
+## Optimiser: Stochastic Gradient Descent
+
+- We need to find the value of our weight resulting in the smallest possible parameter cost
+- The optimisation cannot be solved analytically, so numeric approximations are used
+- E.g. SGD back-propagates the loss per single observation allowing fluctuations
+
+```{r, out.width = "500px", fig.align="center"}
+knitr::include_graphics("img/bprop.png")
+```
+
+## Optimiser: Stochastic Gradient Descent
+
+- What do you mean, it cannot be solved analytically? (NB! Low dim example here!)
+
+```{r, out.width = "500px", fig.align="center"}
+knitr::include_graphics("img/ANN_error_landscape.png")
+```
+
+[Visualizing the Loss Landscape of Neural Nets](https://papers.nips.cc/paper/7875-visualizing-the-loss-landscape-of-neural-nets.pdf)
+
+# Summary
+
+## Key Terms and Concepts
+
+- Input layer: The first layer of neurons being fed the examples from the feature matrix
+- Hidden layer(s): The layers connecting the visible input and output layers
+- Output layer: The layer creating the final output (prediction)
+- Feed forward algorithm: The algorithm used to make a prediction, where information flows from the input via the hidden to the output layer
+- Activation function: The function used to make a non-linear transformation of the set of linear combinations feeding into a neuron
+- Back propagation algorithm: The algorithm used for iteratively training the ANN
+- Loss/error function: The function used to measure the error between the true and the predicted value, when training the ANN
+- Optimiser: The function used for optimising the weights, when training the ANN
+- Epoch: One run through all training examples
+- An ANN can do both binary and multiclass classification and also regression
+
+## Time for exercises!
+
+- Please proceed to the exercise on prototyping an ANN
+
+- At the exercises, I will strongly advice to pair up two-and-two, so you can discuss
+
+- Internalising knowledge is much more effecient, when you are forced to put concepts into words
+
+- GitHub repo for this workshop is: [https://github.com/leonjessen/RPharma2020](https://github.com/leonjessen/RPharma2020)
